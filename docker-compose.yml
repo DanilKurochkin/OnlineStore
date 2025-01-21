@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  django:
+    # Сборка образа для сервиса django
+    build: .
+    container_name: django
+    command: >
+      sh -c "
+      wait-for-it pgdb:5432 --timeout=30 -- 
+      python manage.py migrate &&
+      python manage.py loaddata data.json &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - pgdb
+    environment:
+      - DATABASE_HOST=pgdb
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=postgres
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+
+  pgdb:
+    image: postgres
+    container_name: pgdb
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - pgdbdata:/var/lib/postgresql/data/
+
+volumes:
+  pgdbdata: {}
